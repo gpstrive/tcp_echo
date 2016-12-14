@@ -1,10 +1,13 @@
+#define _GNU_SOURCE
 #include<stdio.h>
 #include<stdlib.h>
 #include<sys/epoll.h>
+#include<sys/types.h>
 #include<unistd.h>
 #include<string.h>
 #include<fcntl.h>
 #include<sched.h>
+#include<errno.h>
 
 #include<sys/socket.h>
 #include<netinet/in.h>
@@ -14,19 +17,25 @@
 #include "request.h"
 #define BUFFSIZE 1024
 
+#define CPUS = 
+char buf[BUFFSIZE]={0};
+
 void read_cb (poll_event_t * poll_event, poll_event_element_t * node, struct epoll_event ev)
 {
     // NOTE -> read is also invoked on accept and connect
-    INFO("in read_cb");
+    //INFO("in read_cb");
     // we just read data and print
-    char buf[BUFFSIZE]={0};
+    memset(buf, 0, BUFFSIZE);
     int val = read(node->fd, buf, BUFFSIZE);
     if (val>0)
     {
         // if we actually get data print it
        //buf[val] = '\0';
-       LOG(" received data -> %s %t\n", buf,clock());
-       
+       //LOG(" received data -> %s %t\n", buf,clock());
+		 int sent=write(node->fd, buf, strlen(buf));
+		 if(sent==-1)
+			 INFO("sent error");
+         /**
        struct request *req=request_new();
        if(req)
        {
@@ -45,6 +54,7 @@ void read_cb (poll_event_t * poll_event, poll_event_element_t * node, struct epo
 	  }
 	  free_request(req);
        }
+       */
        
     }
 }
@@ -65,7 +75,7 @@ void accept_cb(poll_event_t * poll_event, poll_event_element_t * node, struct ep
     socklen_t clt_len = sizeof(clt_addr);
     int listenfd = accept(node->fd, (struct sockaddr*) &clt_addr, &clt_len);
     fcntl(listenfd, F_SETFL, O_NONBLOCK);
-    fprintf(stderr, "got the socket %d\n", listenfd);
+    //fprintf(stderr, "got the socket %d\n", listenfd);
     // set flags to check 
     uint32_t flags = EPOLLIN | EPOLLRDHUP | EPOLLHUP;
     poll_event_element_t *p;
@@ -97,15 +107,25 @@ int timeout_cb (poll_event_t *poll_event)
     return 0;
 }
 
-int threadMain(poll_event *pe)
+int processFork(poll_event_t *pe)
 {
     cpu_set_t mask;
-    for (int i = 0 ; i < 16; i ++) {
+    int i = 0;
+    pid_t pid = 0;
+    long nprocs = sysconf(_SC_NPROCESSORS_ONLN);
+    if (nprocs < 1)
+    {
+        fprintf(stderr, "Could not determine number of CPUs online:\n%s\n", 
+                    strerror (errno));
+        exit (-1);
+    }
+    for (i = 0 ; i < nprocs; i ++) {
         CPU_ZERO(&mask);
         CPU_SET(i, &mask);
         if (fork() == 0) {
+            pid = getpid();
             // start the event loop
-            if (sched_setaffinity(0, sizeof(mask), &mask) < 0) {
+            if (sched_setaffinity(pid, sizeof(mask), &mask) < 0) {
                 perror("sched_setaffinity");
             }
             use_the_force(pe);
@@ -144,6 +164,7 @@ int main()
     p->close_callback = close_cb;
     // enable accept callback
     p->cb_flags |= ACCEPT_CB;
+    processFork(pe);
 
     return 0;
 }
