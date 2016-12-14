@@ -4,6 +4,7 @@
 #include<unistd.h>
 #include<string.h>
 #include<fcntl.h>
+#include<sched.h>
 
 #include<sys/socket.h>
 #include<netinet/in.h>
@@ -95,6 +96,23 @@ int timeout_cb (poll_event_t *poll_event)
     }
     return 0;
 }
+
+int threadMain(poll_event *pe)
+{
+    cpu_set_t mask;
+    for (int i = 0 ; i < 16; i ++) {
+        CPU_ZERO(&mask);
+        CPU_SET(i, &mask);
+        if (fork() == 0) {
+            // start the event loop
+            if (sched_setaffinity(0, sizeof(mask), &mask) < 0) {
+                perror("sched_setaffinity");
+            }
+            use_the_force(pe);
+        }
+    }
+}
+
 int main()
 {
     //SIGPIPE handle by kernel	
@@ -126,8 +144,6 @@ int main()
     p->close_callback = close_cb;
     // enable accept callback
     p->cb_flags |= ACCEPT_CB;
-    // start the event loop
-    use_the_force(pe);
 
     return 0;
 }

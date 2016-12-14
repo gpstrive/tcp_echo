@@ -3,6 +3,7 @@
 
 #include "uthash.h"
 #include <sys/epoll.h>
+#include "queue.h"
 
 #define MAX_EVENTS 100
 #define CALLBACK(x) void (*x) (poll_event_t *, poll_event_element_t *, struct epoll_event)
@@ -40,6 +41,8 @@ struct poll_event_element
     /** only used to enable accept and listen callbacks */
     uint8_t cb_flags;
     UT_hash_handle hh;
+
+    ngx_queue_t queue;
 };
 #define poll_event_element_s sizeof(poll_event_element_t)
 
@@ -59,6 +62,7 @@ struct poll_event
     int epoll_fd;
     /** user data for poll_event */
     void * data;
+    ngx_queue_t queue;
 };
 #define poll_event_s sizeof(poll_event_t)
 

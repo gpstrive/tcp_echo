@@ -7,6 +7,7 @@
 #include <sys/socket.h>
 #include <string.h>
 #include<unistd.h>
+#include "queue.h"
 
 
  static  poll_event_element_t * _nodes;
@@ -223,6 +224,8 @@ int poll_event_process(poll_event_t * poll_event)
  */
 void poll_event_loop(poll_event_t* poll_event)
 {
+    ngx_queue_init(&ngx_posted_accept_events);
+    ngx_queue_init(&ngx_posted_events);
     INFO("Entering the main event loop for epoll lib");
     while(!poll_event_process(poll_event));
 } 
