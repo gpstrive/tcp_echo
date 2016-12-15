@@ -74,8 +74,12 @@ void accept_cb(poll_event_t * poll_event, poll_event_element_t * node, struct ep
     struct sockaddr_in clt_addr;
     socklen_t clt_len = sizeof(clt_addr);
     int listenfd = accept(node->fd, (struct sockaddr*) &clt_addr, &clt_len);
+    if (listenfd < 0) {
+        fprintf(stderr, "accept error %s \n", strerror(errno));
+        return;
+    }
+    //fprintf(stderr, "got the socket %d on %d\n", listenfd, getpid());
     fcntl(listenfd, F_SETFL, O_NONBLOCK);
-    //fprintf(stderr, "got the socket %d\n", listenfd);
     // set flags to check 
     uint32_t flags = EPOLLIN | EPOLLRDHUP | EPOLLHUP;
     poll_event_element_t *p;

@@ -96,8 +96,8 @@ int main(int argc, char *argv[])
 	exit(0);
     }
 
-   request_flood(atoi(argv[1]));
-   // connect_flood(atoi(argv[1]));
+   //request_flood(atoi(argv[1]));
+   connect_flood(atoi(argv[1]));
 
     return 0;  
 }
