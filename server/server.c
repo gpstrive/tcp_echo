@@ -27,12 +27,15 @@ void read_cb (poll_event_t * poll_event, poll_event_element_t * node, struct epo
     // we just read data and print
     memset(buf, 0, BUFFSIZE);
     int val = read(node->fd, buf, BUFFSIZE);
+    if (val > 1024) {
+	val = 1024;
+    }
     if (val>0)
     {
         // if we actually get data print it
-       //buf[val] = '\0';
+       buf[val] = '\0';
        //LOG(" received data -> %s %t\n", buf,clock());
-		 int sent=write(node->fd, buf, strlen(buf));
+		 int sent=write(node->fd, buf, val);
 		 if(sent==-1)
 			 INFO("sent error");
          /**
@@ -150,7 +153,7 @@ int main()
     memset(&svr_addr, 0 , sizeof(svr_addr));
     svr_addr.sin_family = AF_INET;
     svr_addr.sin_addr.s_addr = htons(INADDR_ANY);
-    svr_addr.sin_port = htons(8080);
+    svr_addr.sin_port = htons(80);
     bind(sock, (struct sockaddr *) &svr_addr, sizeof(svr_addr));
     listen(sock, 10);
     fcntl(sock, F_SETFL, O_NONBLOCK);

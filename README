@@ -1,3 +1,14 @@
-high performance epoll-event,25w+ req/sec (without request parse),20w req/sec with request parse on a common pc
+进入server目录， 运行make命令, 生成可运行文件server；
 
-based on https://github.com/ohscar/epoll-event
+直接运行./server 即可, server会自动检测当前cpu数目，然后在每个cpu上运行一个子进程；
+server默认会监听80端口.
+
+测试前， 对linux进行如下设置:
+
+ulimit -u unlimited
+ulimit -n 65536
+ulimit -d unlimited 
+ulimit -m unlimited 
+ulimit -s unlimited 
+ulimit -t unlimited 
+ulimit -v unlimited
